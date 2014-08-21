@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace sudoku
+namespace SudokuSolver
 {
     class Sudoku
     {
@@ -67,6 +67,29 @@ namespace sudoku
             return output;
         }
         /// <summary>
+        /// Verifies every number in the sudoku.
+        /// Ignores blank spaces
+        /// Pretty slow process
+        /// </summary>
+        /// <returns>true if the board is valid, false otherwise</returns>
+        public bool SlowVerify()
+        {
+            for (byte i=0; i<9;i++)
+                for (byte j=0; j<9;j++)
+                    if (this[i, j] != 0)
+                    {
+                        //temporarily remove this element
+                        byte temp = this[i, j];
+                        this[i, j] = 0;
+                        //see if it belongs in its place
+                        bool valid = this.ValidNums(i, j).Contains(temp);
+                        //put it back
+                        this[i, j] = temp;
+                        if (!valid) return false;
+                    }
+            return true;
+        }
+        /// <summary>
         /// Load up a bunch of bytes into the sudoku grid
         /// </summary>
         /// <param name="values">A byte array, along and down</param>
@@ -98,6 +121,32 @@ namespace sudoku
                         return false;
                 return true;
             }
+        }
+        /// <summary>
+        /// Solves the sudoku given. 
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="begin">Internal use only</param>
+        /// <returns>Whether the sudoku was solved</returns>
+        public static bool Solve(Sudoku s, int begin = 0)
+        {
+            while (s[begin] != 0) begin++; //skip to the next blank space
+
+            List<byte> possible = s.ValidNums(begin); //get all possibilities for this space
+
+            //start exploring the solution tree recursively
+            //you would expect this to take forever, but as we step deeper into the tree, the number of possibilities rapidly decreases
+            foreach (byte p in possible)
+            {
+                s[begin] = p;
+                if (s.Complete) return true; //if adding this valid number completes the tree, it is solved
+                else Solve(s, begin + 1); //Start exploring the solution tree
+                if (s.Complete) return true; //if one of the children of this branch was a solution, it is solved
+                //otherwise try another branch
+            }
+            // If execution gets here, there is no solution
+            s[begin] = 0; //set the current space back to blank
+            return false;
         }
         /// <summary>
         /// Turns a Sudoku grid into a string
